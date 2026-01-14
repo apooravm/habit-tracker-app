@@ -1,5 +1,9 @@
-import { Text, View, StyleSheet } from "react-native";
-import { Link } from "expo-router";
+import { StyleSheet, View } from "react-native";
+
+import Button from "@/components/Button";
+import ImageViewer from "@/components/ImageViewer";
+
+const placeholderImage = require("@/assets/images2/background-image.png");
 
 const styles = StyleSheet.create({
     container: {
@@ -7,6 +11,10 @@ const styles = StyleSheet.create({
         backgroundColor: "#25292e",
         alignItems: "center",
         justifyContent: "center",
+    },
+    footContainer: {
+        flex: 1 / 3,
+        alignItems: "center",
     },
     text: {
         color: "hotpink",
@@ -23,10 +31,11 @@ const styles = StyleSheet.create({
 export default function Index() {
     return (
         <View style={styles.container}>
-            <Text style={styles.text}>2939329 index.tsx to edit this screen.</Text>
-            <Link href="/about" style={styles.button}>
-                Go to About Screen
-            </Link>
+            <ImageViewer imgSource={placeholderImage} />
+            <View style={styles.footContainer}>
+                <Button label="Choose a photo" />
+                <Button label="Use this photo" />
+            </View>
         </View>
     );
 }
