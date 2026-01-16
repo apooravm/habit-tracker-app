@@ -16,24 +16,24 @@ const styles = StyleSheet.create({
         flex: 1 / 3,
         alignItems: "center",
     },
+    imageContainer: {
+        flex: 1,
+    },
     text: {
         color: "hotpink",
         fontWeight: "800",
         fontSize: 20,
-    },
-    button: {
-        fontSize: 20,
-        textDecorationLine: "underline",
-        color: "#fff",
     },
 });
 
 export default function Index() {
     return (
         <View style={styles.container}>
-            <ImageViewer imgSource={placeholderImage} />
+            <View style={styles.imageContainer}>
+                <ImageViewer imgSource={placeholderImage} />
+            </View>
             <View style={styles.footContainer}>
-                <Button label="Choose a photo" />
+                <Button label="Choose a photo" theme="primary" />
                 <Button label="Use this photo" />
             </View>
         </View>
