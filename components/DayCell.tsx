@@ -1,19 +1,16 @@
+import { DayCount } from "@/types/habits";
 import { View } from "react-native";
 
-type Props = {
-    count: number;
-};
-
-export default function DayCell({ count }: Props) {
+export const DayCell = ({ day }: { day: DayCount }) => {
     return (
         <View
             style={{
-                width: 12,
-                height: 12,
+                width: 18,
+                height: 18,
                 marginBottom: 4,
                 borderRadius: 2,
-                backgroundColor: "orange",
+                backgroundColor: day.done ? "#39d353" : "#161b22",
             }}
         />
     );
-}
+};
