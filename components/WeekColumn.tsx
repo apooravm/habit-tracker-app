@@ -1,23 +1,24 @@
-import { DayCount, ISODate } from "@/types/habits";
-import { Pressable, View } from "react-native";
+import { DayCount } from "@/types/habits";
+import { memo } from "react";
+import { View } from "react-native";
 import { DayCell } from "./DayCell";
 
 type Props = {
     habit_id: string;
     week: DayCount[];
-    toggleDay: (habit_id: string, date: ISODate) => void;
 };
 
-const WeekColumn = ({ week, toggleDay, habit_id }: Props) => {
+const WeekColumn = ({ week, habit_id }: Props) => {
     return (
-        <View style={{ marginRight: 4 }}>
+        <View style={{ marginRight: 3 }}>
             {week.map(day => (
-                <Pressable key={day.date} onPress={() => toggleDay(habit_id, day.date)}>
-                    <DayCell day={day} />
-                </Pressable>
+                <DayCell day={day} />
+                // <Pressable key={day.date} onPress={() => toggleDay(habit_id, day.date)}>
+                // </Pressable>
             ))}
         </View>
     );
 };
 
-export default WeekColumn;
+// optimizes - It prevents re-render unless week or habitId actually changes
+export default memo(WeekColumn);

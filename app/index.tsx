@@ -24,5 +24,5 @@ export default function Index() {
         <View style={styles.container}>
             <Text style={styles.text}>Hi 😪</Text>
         </View>
-    )
+    );
 }

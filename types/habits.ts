@@ -1,8 +1,14 @@
+export enum DayDone {
+    Yes,
+    No,
+    OutOfScope,
+}
+
 export type ISODate = string;
 
 export type DayCount = {
     date: ISODate;
-    done: boolean;
+    done: DayDone;
 };
 
 export type HabitState = {
