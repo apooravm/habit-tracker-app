@@ -89,41 +89,11 @@ export default function Index() {
                         startDate: h.start_date,
                         completedDates: new Set(dates),
                     };
+
+                    setHabits(prev => [...prev, habitState]);
                 });
             }
         });
-        const fetched_habits_raw = [
-            {
-                id: 1,
-                name: "habit_a",
-                completed_dates: fetched_dates_raw,
-                start_date: "Sat Nov 01 2025",
-            },
-            {
-                id: 2,
-                name: "habit_b",
-                completed_dates: fetched_dates_raw,
-                start_date: "Sat Nov 01 2025",
-            },
-            {
-                id: 3,
-                name: "habit_c",
-                completed_dates: fetched_dates_raw,
-                start_date: "Sat Nov 01 2025",
-            },
-        ];
-        for (const h of fetched_habits_raw) {
-            const habit: HabitState = {
-                completedDates: new Set(h.completed_dates),
-                id: h.id,
-                name: h.name,
-                startDate: h.start_date,
-            };
-
-            setHabits(prev => {
-                return [...prev, habit];
-            });
-        }
     }, []);
 
     useEffect(() => {

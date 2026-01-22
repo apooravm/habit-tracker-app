@@ -1,7 +1,9 @@
 import { appStartup } from "@/funcs/initApp";
+import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
+import { Text, TouchableOpacity } from "react-native";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -38,6 +40,17 @@ export default function RootLayout() {
                 headerShadowVisible: false,
                 headerTintColor: "#fff",
                 headerShown: true,
+                headerTitle: () => (
+                    <Text style={{ color: "#fff", fontSize: 18 }}>Habit Tracker</Text>
+                ),
+
+                headerRight: () => (
+                    <TouchableOpacity
+                        onPress={() => console.log("Add pressed")}
+                        style={{ marginRight: 15 }}>
+                        <Ionicons name="add-circle-outline" size={28} color="white" />
+                    </TouchableOpacity>
+                ),
             }}
         />
     );
