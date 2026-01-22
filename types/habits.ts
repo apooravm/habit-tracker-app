@@ -12,8 +12,20 @@ export type DayCount = {
 };
 
 export type HabitState = {
-    id: string;
+    id: number;
     name: string;
     completedDates: Set<ISODate>;
     startDate: ISODate;
+};
+
+export type Habit = {
+    id: number;
+    name: string;
+    start_date: string;
+};
+
+export type HabitDate = {
+    id: number;
+    habit_id: number;
+    complete_date: string;
 };

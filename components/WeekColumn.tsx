@@ -4,15 +4,15 @@ import { View } from "react-native";
 import { DayCell } from "./DayCell";
 
 type Props = {
-    habit_id: string;
+    habit_id: number;
     week: DayCount[];
 };
 
 const WeekColumn = ({ week, habit_id }: Props) => {
     return (
         <View style={{ marginRight: 3 }}>
-            {week.map(day => (
-                <DayCell day={day} />
+            {week.map((day, idx) => (
+                <DayCell key={idx} day={day} />
                 // <Pressable key={day.date} onPress={() => toggleDay(habit_id, day.date)}>
                 // </Pressable>
             ))}

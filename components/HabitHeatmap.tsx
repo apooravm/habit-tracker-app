@@ -54,7 +54,7 @@ const getWeeklyData = (completedDates: Set<string>, habitStartDate: ISODate): Da
 
 type Props = {
     habit: HabitState;
-    toggleDay: (habitId: string) => void;
+    toggleDay: (habitId: number) => void;
 };
 
 const styles = StyleSheet.create({
