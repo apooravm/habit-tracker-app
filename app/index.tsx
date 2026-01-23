@@ -1,4 +1,6 @@
+import CreateHabit from "@/components/CreateHabitModal";
 import HabitHeatmap from "@/components/HabitHeatmap";
+import { useModal } from "@/components/ModalContext";
 import { getHabitDates, getHabits } from "@/db/db";
 import { HabitState } from "@/types/habits";
 import React, { useEffect, useState } from "react";
@@ -76,6 +78,8 @@ export default function Index() {
     const [fetchedDates, setFetchedDates] = useState<Set<string>>(new Set());
     const [habits, setHabits] = useState<HabitState[]>([]);
 
+    const { modalVisible, hideModal } = useModal();
+
     useEffect(() => {
         // load from db here...
         // setFetchedDates(new Set(fetched_dates_raw));
@@ -126,6 +130,7 @@ export default function Index() {
 
     return (
         <View style={styles.container}>
+            <CreateHabit isVisible={modalVisible} onClose={hideModal} />
             <ScrollView style={styles.habitContainer}>
                 {habits.map(h => (
                     <HabitHeatmap key={h.id} toggleDay={toggleDay} habit={h} />

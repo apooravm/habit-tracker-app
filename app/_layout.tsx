@@ -1,3 +1,4 @@
+import { ModalProvider, useModal } from "@/components/ModalContext";
 import { appStartup } from "@/funcs/initApp";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
@@ -9,6 +10,15 @@ SplashScreen.preventAutoHideAsync();
 
 export function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function HeaderButton() {
+    const { showModal } = useModal();
+    return (
+        <TouchableOpacity onPress={() => showModal()} style={{ marginRight: 15 }}>
+            <Ionicons name="add-circle-outline" size={28} color="white" />
+        </TouchableOpacity>
+    );
 }
 
 export default function RootLayout() {
@@ -32,26 +42,22 @@ export default function RootLayout() {
     }
 
     return (
-        <Stack
-            screenOptions={{
-                headerStyle: {
-                    backgroundColor: "#25292e",
-                },
-                headerShadowVisible: false,
-                headerTintColor: "#fff",
-                headerShown: true,
-                headerTitle: () => (
-                    <Text style={{ color: "#fff", fontSize: 18 }}>Habit Tracker</Text>
-                ),
+        <ModalProvider>
+            <Stack
+                screenOptions={{
+                    headerStyle: {
+                        backgroundColor: "#25292e",
+                    },
+                    headerShadowVisible: false,
+                    headerTintColor: "#fff",
+                    headerShown: true,
+                    headerTitle: () => (
+                        <Text style={{ color: "#fff", fontSize: 18 }}>Habit Tracker</Text>
+                    ),
 
-                headerRight: () => (
-                    <TouchableOpacity
-                        onPress={() => console.log("Add pressed")}
-                        style={{ marginRight: 15 }}>
-                        <Ionicons name="add-circle-outline" size={28} color="white" />
-                    </TouchableOpacity>
-                ),
-            }}
-        />
+                    headerRight: () => <HeaderButton />,
+                }}
+            />
+        </ModalProvider>
     );
 }
