@@ -7,6 +7,7 @@ import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-nativ
 type Props = {
     isVisible: boolean;
     onClose: () => void;
+    refetchHabitData: () => void;
 };
 
 const BUTTON_W = 280;
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
     },
 });
 
-export default function CreateHabit({ isVisible, onClose }: Props) {
+export default function CreateHabit({ isVisible, onClose, refetchHabitData }: Props) {
     const [habitName, setHabitName] = useState<string>("");
     return (
         <Modal transparent visible={isVisible} animationType="fade">
@@ -133,6 +134,7 @@ export default function CreateHabit({ isVisible, onClose }: Props) {
                             const today = new Date();
                             createHabit(habitName, today.toDateString()).then(() => {
                                 onClose();
+                                refetchHabitData();
                             });
                         }}>
                         <View style={styles.shadow} />

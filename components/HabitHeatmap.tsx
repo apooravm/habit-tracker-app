@@ -1,6 +1,8 @@
-import { DayCount, DayDone, HabitState, ISODate } from "@/types/habits";
-import { useMemo } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { DayCount, DayDone, Habit, HabitState, ISODate } from "@/types/habits";
+import { Ionicons } from "@expo/vector-icons";
+import { useMemo, useState } from "react";
+import { FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import HabitConfigModal from "./HabitConfigModal";
 import WeekColumn from "./WeekColumn";
 
 const getWeeklyData = (completedDates: Set<string>, habitStartDate: ISODate): DayCount[][] => {
@@ -55,6 +57,7 @@ const getWeeklyData = (completedDates: Set<string>, habitStartDate: ISODate): Da
 type Props = {
     habit: HabitState;
     toggleDay: (habitId: number) => void;
+    updateHabit: (id: number, changes: Partial<HabitState>) => void;
 };
 
 const styles = StyleSheet.create({
@@ -77,14 +80,28 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
         fontSize: 20,
     },
+    habit_header: {
+        flex: 1,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
 });
 
-const HabitHeatmap = ({ habit, toggleDay }: Props) => {
+const HabitHeatmap = ({ habit, toggleDay, updateHabit }: Props) => {
     const weeks = useMemo(() => {
         return getWeeklyData(habit.completedDates, habit.startDate);
     }, [habit.completedDates]);
 
+    const habitOnly: Habit = {
+        id: habit.id,
+        name: habit.name,
+        start_date: habit.startDate,
+        archived: false,
+    };
     const today = new Date();
+
+    const [modalVisible, setModalVisible] = useState(false);
 
     return (
         <View
@@ -92,9 +109,24 @@ const HabitHeatmap = ({ habit, toggleDay }: Props) => {
                 ...styles.container,
                 borderLeftColor: habit.completedDates.has(today.toDateString()) ? "green" : "red",
             }}>
-            <Pressable onPress={() => toggleDay(habit.id)}>
+            <HabitConfigModal
+                habit={habitOnly}
+                isVisible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                updateHabit={updateHabit}
+            />
+            <View style={styles.habit_header}>
                 <Text style={styles.habit_title}>{habit.name}</Text>
 
+                <TouchableOpacity
+                    onPress={() => {
+                        setModalVisible(prev => !prev);
+                    }}
+                    style={{ marginRight: 15 }}>
+                    <Ionicons name="add-circle-outline" size={28} color="white" />
+                </TouchableOpacity>
+            </View>
+            <Pressable onPress={() => toggleDay(habit.id)}>
                 <FlatList
                     data={weeks}
                     horizontal

@@ -16,12 +16,14 @@ export type HabitState = {
     name: string;
     completedDates: Set<ISODate>;
     startDate: ISODate;
+    archived: boolean;
 };
 
 export type Habit = {
     id: number;
     name: string;
     start_date: string;
+    archived: boolean;
 };
 
 export type HabitDate = {

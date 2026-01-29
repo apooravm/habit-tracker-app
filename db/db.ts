@@ -26,7 +26,8 @@ export async function initDB() {
         CREATE TABLE IF NOT EXISTS habits (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            start_date TEXT NOT NULL
+            start_date TEXT NOT NULL,
+            archived BOOLEAN NOT NULL DEFAULT FALSE
         );
 
         CREATE TABLE IF NOT EXISTS habit_dates (
@@ -44,11 +45,22 @@ export async function initDB() {
         `);
 }
 
+export async function nukeDB(): Promise<void> {
+    // Drop the tables if they exist
+    await db.execAsync(`
+        DROP TABLE IF EXISTS habit_dates;
+        DROP TABLE IF EXISTS habits;
+    `);
+
+    await initDB();
+}
+
 export async function createHabit(name: string, startDate: string): Promise<number> {
     const res = await db.runAsync(
         `INSERT INTO habits (name, start_date) VALUES (?, ?)`,
         name,
         startDate,
+        false,
     );
 
     return res.lastInsertRowId;
@@ -56,6 +68,38 @@ export async function createHabit(name: string, startDate: string): Promise<numb
 
 export async function getHabits(): Promise<Habit[]> {
     return db.getAllAsync<Habit>(`SELECT * FROM habits ORDER BY id;`);
+}
+
+export async function UpdateHabit(
+    id: number,
+    name: string,
+    startDate: string,
+    archived: boolean,
+): Promise<void> {
+    await db.runAsync(
+        `
+        UPDATE habits
+        SET name = ?, start_date = ?
+        WHERE id = ?
+        `,
+        name,
+        startDate,
+        id,
+    );
+}
+
+export async function ArchiveHabit(id: number): Promise<void> {
+    await db.runAsync(
+        `UPDATE habits
+        SET archived = 1
+        WHERE id = ?
+        `,
+        id,
+    );
+}
+
+export async function DeleteHabit(id: number): Promise<void> {
+    await db.runAsync(`DELETE FROM habits WHERE id = ?`, id);
 }
 
 // ignore if unique combo (habit_id, completed_date) already exists

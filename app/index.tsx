@@ -77,28 +77,81 @@ const fetched_dates_raw = [
 export default function Index() {
     const [fetchedDates, setFetchedDates] = useState<Set<string>>(new Set());
     const [habits, setHabits] = useState<HabitState[]>([]);
+    const [refetchHabitData, setRefetchHabitData] = useState(false);
 
     const { modalVisible, hideModal } = useModal();
 
+    /*
+    Updating with new data (name, completed date, etc.)
+
+Instead of passing just id, pass what changed.
+
+const updateHabit = (id: number, changes: Partial<HabitState>) => {
+  setHabits(prev =>
+    prev.map(h =>
+      h.id === id ? { ...h, ...changes } : h
+    )
+  );
+};
+
+
+Usage:
+
+updateHabit(habit.id, { name: "Drink Water" });
+
+
+For Set:
+
+updateHabit(habit.id, {
+  completedDates: new Set([...habit.completedDates, today]),
+});
+
+// 1. optimistic UI
+setHabits(prev => updateLocally(prev, id));
+
+// 2. save to DB
+await updateHabitInDb(id);
+
+// 3. optional: revalidate
+const freshHabit = await fetchHabit(id);
+setHabits(prev => merge(prev, freshHabit));
+
+    // setHabits(prev =>
+    //     prev.map(habit =>
+    //         habit.id === updatedHabit.id
+    //         ? { ...habit, name: "New name" }
+    //         : habit
+    //     )
+    // );
+*/
     useEffect(() => {
         // load from db here...
         // setFetchedDates(new Set(fetched_dates_raw));
         // all habits fetch here
+        const habit_ids = habits.map(h => h.id);
         getHabits().then(habits => {
             for (const h of habits) {
-                getHabitDates(h.id).then(dates => {
-                    const habitState: HabitState = {
-                        id: h.id,
-                        name: h.name,
-                        startDate: h.start_date,
-                        completedDates: new Set(dates),
-                    };
+                // skip habit with h.id already exists in state
+                if (!habit_ids.includes(h.id)) {
+                    getHabitDates(h.id).then(dates => {
+                        const habitState: HabitState = {
+                            id: h.id,
+                            name: h.name,
+                            startDate: h.start_date,
+                            completedDates: new Set(dates),
+                            archived: h.archived,
+                        };
 
-                    setHabits(prev => [...prev, habitState]);
-                });
+                        setHabits(prev => [...prev, habitState]);
+                    });
+                }
             }
         });
-    }, []);
+    }, [refetchHabitData]);
+
+    const updateHabit = (id: number, changes: Partial<HabitState>) => {
+        setHabits(prev => prev.map(h => (h.id === id ? { ...h, ...changes } : h)));
+    };
 
     useEffect(() => {
         // save to db here...
@@ -130,10 +183,19 @@ export default function Index() {
 
     return (
         <View style={styles.container}>
-            <CreateHabit isVisible={modalVisible} onClose={hideModal} />
+            <CreateHabit
+                isVisible={modalVisible}
+                onClose={hideModal}
+                refetchHabitData={() => setRefetchHabitData(prev => !prev)}
+            />
             <ScrollView style={styles.habitContainer}>
                 {habits.map(h => (
-                    <HabitHeatmap key={h.id} toggleDay={toggleDay} habit={h} />
+                    <HabitHeatmap
+                        key={h.id}
+                        toggleDay={toggleDay}
+                        habit={h}
+                        updateHabit={updateHabit}
+                    />
                 ))}
             </ScrollView>
         </View>
