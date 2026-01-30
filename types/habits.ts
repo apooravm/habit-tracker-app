@@ -4,6 +4,12 @@ export enum DayDone {
     OutOfScope,
 }
 
+export type HabitAction =
+    | { type: "habit/dateAdded"; habitId: number; date: string }
+    | { type: "habit/dateRemoved"; habitId: number; date: string }
+    | { type: "habit/renamed"; habitId: number; name: string }
+    | { type: "habit/deleted"; habitId: number };
+
 export type ISODate = string;
 
 export type DayCount = {

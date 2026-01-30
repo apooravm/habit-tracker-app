@@ -1,5 +1,5 @@
 import { UpdateHabit } from "@/db/db";
-import { Habit, HabitState } from "@/types/habits";
+import { Habit, HabitAction } from "@/types/habits";
 import { MaterialIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useState } from "react";
@@ -10,10 +10,10 @@ type Props = {
     onClose: () => void;
     isVisible: boolean;
     habit: Habit;
-    updateHabit: (id: number, changes: Partial<HabitState>) => void;
+    applyHabitAction: (action: HabitAction) => void;
 };
 
-export default function HabitConfigModal({ onClose, isVisible, habit, updateHabit }: Props) {
+export default function HabitConfigModal({ onClose, isVisible, habit, applyHabitAction }: Props) {
     const [habitData, setHabitData] = useState<Habit>(habit);
     const [modalVisible, setModalVisible] = useState(false);
 
@@ -84,7 +84,11 @@ export default function HabitConfigModal({ onClose, isVisible, habit, updateHabi
                                 habitData.start_date,
                                 habit.archived,
                             ).then(() => {
-                                updateHabit(habitData.id, { name: habitData.name });
+                                applyHabitAction({
+                                    type: "habit/renamed",
+                                    habitId: habitData.id,
+                                    name: habitData.name,
+                                });
                                 onClose();
                             });
                         }}>

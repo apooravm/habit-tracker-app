@@ -1,8 +1,14 @@
 import CreateHabit from "@/components/CreateHabitModal";
 import HabitHeatmap from "@/components/HabitHeatmap";
 import { useModal } from "@/components/ModalContext";
-import { getHabitDates, getHabits } from "@/db/db";
-import { HabitState } from "@/types/habits";
+import {
+    ArchiveHabit,
+    getHabitDates,
+    getHabits,
+    renameHabit,
+    trackHabitDate
+} from "@/db/db";
+import { HabitAction, HabitState } from "@/types/habits";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
@@ -51,10 +57,12 @@ const fetched_dates_raw = [
     "Mon Dec 22 2025",
     "Wed Dec 24 2025",
     "Sat Dec 27 2025",
+    "Sun Dec 28 2025",
     "Mon Dec 29 2025",
+    "Tue Dec 30 2025",
+    "Wed Dec 31 2025",
 
     // Jan 2026
-    "Thu Jan 01 2026",
     "Fri Jan 02 2026",
     "Sat Jan 03 2026",
     "Sun Jan 04 2026",
@@ -66,6 +74,7 @@ const fetched_dates_raw = [
     "Mon Jan 12 2026",
     "Tue Jan 13 2026",
     "Wed Jan 14 2026",
+    "Wed Jan 28 2026",
 ];
 
 // love the approach to use the actual list of dates as a
@@ -149,6 +158,74 @@ setHabits(prev => merge(prev, freshHabit));
         });
     }, [refetchHabitData]);
 
+    const applyHabitAction = (action: HabitAction) => {
+        setHabits(prevHabits => reduceHabits(prevHabits, action));
+
+        // save changes to db
+        syncHabitWithDb(action).then(() => {
+            // alert("DB UPDATED!!!!");
+        });
+    };
+
+    const reduceHabits = (habits: HabitState[], action: HabitAction): HabitState[] => {
+        switch (action.type) {
+            case "habit/dateAdded":
+                return habits.map(habit =>
+                    habit.id === action.habitId
+                        ? {
+                              ...habit,
+                              completedDates: new Set([...habit.completedDates, action.date]),
+                          }
+                        : habit,
+                );
+
+            case "habit/dateRemoved":
+                const newDates = habits.find(h => h.id === action.habitId)!.completedDates;
+                newDates.delete(action.date);
+                return habits.map(habit =>
+                    habit.id === action.habitId
+                        ? { ...habit, completedDates: new Set(newDates) }
+                        : habit,
+                );
+
+            case "habit/renamed":
+                return habits.map(habit =>
+                    habit.id === action.habitId ? { ...habit, name: action.name } : habit,
+                );
+
+            case "habit/deleted":
+                return habits.filter(habit => habit.id !== action.habitId);
+        }
+    };
+
+    const syncHabitWithDb = async (action: HabitAction) => {
+        switch (action.type) {
+            case "habit/dateAdded":
+                await trackHabitDate(action.habitId, action.date);
+                break;
+
+            case "habit/dateRemoved":
+                await ArchiveHabit(action.habitId);
+                break;
+
+            case "habit/renamed":
+                await renameHabit(action.habitId, action.name);
+                break;
+
+            case "habit/deleted":
+                await ArchiveHabit(action.habitId);
+                break;
+
+            default:
+                break;
+        }
+
+        // optional: revalidate
+        // const freshHabit = await fetchHabit(habit.id);
+        // setHabits(prev => merge(prev, freshHabit));
+    };
+
+    // DEPRECATED
     const updateHabit = (id: number, changes: Partial<HabitState>) => {
         setHabits(prev => prev.map(h => (h.id === id ? { ...h, ...changes } : h)));
     };
@@ -157,29 +234,6 @@ setHabits(prev => merge(prev, freshHabit));
         // save to db here...
         // saveCompleteDates([...fetchedDates])
     }, [fetchedDates]);
-
-    // delete date in state if exists, else add
-    const toggleDay = (habit_id: number) => {
-        setHabits(prev => {
-            return prev.map(h => {
-                if (h.id !== habit_id) return h;
-
-                const today = new Date().toDateString();
-                const newCompletedDates = new Set(h.completedDates);
-
-                if (newCompletedDates.has(today)) {
-                    newCompletedDates.delete(today);
-                } else {
-                    newCompletedDates.add(today);
-                }
-
-                return {
-                    ...h,
-                    completedDates: newCompletedDates,
-                };
-            });
-        });
-    };
 
     return (
         <View style={styles.container}>
@@ -190,12 +244,7 @@ setHabits(prev => merge(prev, freshHabit));
             />
             <ScrollView style={styles.habitContainer}>
                 {habits.map(h => (
-                    <HabitHeatmap
-                        key={h.id}
-                        toggleDay={toggleDay}
-                        habit={h}
-                        updateHabit={updateHabit}
-                    />
+                    <HabitHeatmap key={h.id} habit={h} applyHabitAction={applyHabitAction} />
                 ))}
             </ScrollView>
         </View>

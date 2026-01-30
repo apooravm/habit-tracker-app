@@ -1,12 +1,17 @@
-import { DayCount, DayDone, Habit, HabitState, ISODate } from "@/types/habits";
+import { DayCount, DayDone, Habit, HabitAction, HabitState, ISODate } from "@/types/habits";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import HabitConfigModal from "./HabitConfigModal";
 import WeekColumn from "./WeekColumn";
 
-const getWeeklyData = (completedDates: Set<string>, habitStartDate: ISODate): DayCount[][] => {
-    const TOTAL_WEEKS = 28;
+type Month = {
+    month: string;
+    weeks: DayCount[][];
+};
+
+const getMonthlyData = (completedDates: Set<string>, habitStartDate: ISODate): Month[] => {
+    const TOTAL_WEEKS = 40;
     const today = new Date();
     const h_StartDate = new Date(habitStartDate);
 
@@ -16,7 +21,8 @@ const getWeeklyData = (completedDates: Set<string>, habitStartDate: ISODate): Da
     const currMonday = new Date(today);
     currMonday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
 
-    const weeks: DayCount[][] = [];
+    const months: Month[] = [];
+    let weeks: DayCount[][] = [];
     // create week array, fill with empty
     let currWeek: DayCount[] = Array.from({ length: 7 }, () => ({
         date: "",
@@ -28,6 +34,7 @@ const getWeeklyData = (completedDates: Set<string>, habitStartDate: ISODate): Da
         // allows me to keep the count of dates
         for (let day = 0; day < 7; day++) {
             const currDate = new Date(currMonday);
+            // offset day from monday
             currDate.setDate(currMonday.getDate() + day);
             const dayObj: DayCount = {
                 date: currDate.toDateString(),
@@ -43,34 +50,57 @@ const getWeeklyData = (completedDates: Set<string>, habitStartDate: ISODate): Da
             currWeek[day] = dayObj;
         }
         weeks.push(currWeek);
+        const prevMonday = new Date(currMonday);
+        currMonday.setDate(currMonday.getDate() - 7);
+        if (currMonday.getMonth() !== prevMonday.getMonth()) {
+            months.push({
+                month: prevMonday.toLocaleString("default", { month: "long" }),
+                weeks: weeks.toReversed(),
+            });
+            weeks = [];
+        }
         // reset week array for previous week
         currWeek = Array.from({ length: 7 }, () => ({
             date: "",
             done: DayDone.OutOfScope,
         }));
-        currMonday.setDate(currMonday.getDate() - 7);
     }
 
-    return weeks;
+    return months;
 };
+
+const monthMap: Record<string, string> = {
+    January: "Jan",
+    February: "Feb",
+    March: "Mar",
+    April: "Apr",
+    May: "May",
+    June: "Jun",
+    July: "Jul",
+    August: "Aug",
+    September: "Sept",
+    October: "Oct",
+    November: "Nov",
+    December: "Dec",
+};
+
+const shortenMonth = (month: string): string => monthMap[month] ?? month;
 
 type Props = {
     habit: HabitState;
-    toggleDay: (habitId: number) => void;
-    updateHabit: (id: number, changes: Partial<HabitState>) => void;
+    applyHabitAction: (action: HabitAction) => void;
 };
 
 const styles = StyleSheet.create({
     container: {
         marginBottom: 10,
-        marginHorizontal: 10,
-        padding: 6,
-        paddingLeft: 7,
-        borderWidth: 2,
-        borderLeftWidth: 4,
-        borderColor: "#fff",
-        borderTopRightRadius: 8,
-        borderBottomRightRadius: 8,
+        marginHorizontal: 4,
+        paddingVertical: 8,
+        paddingLeft: 5,
+        paddingRight: 5,
+        borderWidth: 1,
+        borderColor: "#303030ff",
+        borderRadius: 5,
         backgroundColor: "#0b0b0bff",
     },
     habit_title: {
@@ -79,18 +109,25 @@ const styles = StyleSheet.create({
         color: "#fff",
         paddingVertical: 5,
         fontSize: 20,
+        paddingLeft: 5,
     },
-    habit_header: {
+    habit_footer: {
         flex: 1,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
     },
+    footer_button: {
+        borderWidth: 1,
+        borderColor: "#303030ff",
+        borderRadius: 5,
+        padding: 8,
+    },
 });
 
-const HabitHeatmap = ({ habit, toggleDay, updateHabit }: Props) => {
-    const weeks = useMemo(() => {
-        return getWeeklyData(habit.completedDates, habit.startDate);
+const HabitHeatmap = ({ habit, applyHabitAction }: Props) => {
+    const months = useMemo(() => {
+        return getMonthlyData(habit.completedDates, habit.startDate);
     }, [habit.completedDates]);
 
     const habitOnly: Habit = {
@@ -103,39 +140,85 @@ const HabitHeatmap = ({ habit, toggleDay, updateHabit }: Props) => {
 
     const [modalVisible, setModalVisible] = useState(false);
 
+    const trackToday = () => {
+        applyHabitAction({
+            type: "habit/dateAdded",
+            habitId: habit.id,
+            date: new Date().toDateString(),
+        });
+    };
+
     return (
         <View
             style={{
                 ...styles.container,
-                borderLeftColor: habit.completedDates.has(today.toDateString()) ? "green" : "red",
             }}>
             <HabitConfigModal
                 habit={habitOnly}
                 isVisible={modalVisible}
                 onClose={() => setModalVisible(false)}
-                updateHabit={updateHabit}
+                applyHabitAction={applyHabitAction}
             />
-            <View style={styles.habit_header}>
-                <Text style={styles.habit_title}>{habit.name}</Text>
-
-                <TouchableOpacity
-                    onPress={() => {
-                        setModalVisible(prev => !prev);
-                    }}
-                    style={{ marginRight: 15 }}>
-                    <Ionicons name="add-circle-outline" size={28} color="white" />
-                </TouchableOpacity>
-            </View>
-            <Pressable onPress={() => toggleDay(habit.id)}>
+            <View>
                 <FlatList
-                    data={weeks}
+                    data={months}
                     horizontal
                     inverted
                     showsHorizontalScrollIndicator={false}
-                    keyExtractor={week => week[0].date}
-                    renderItem={({ item }) => <WeekColumn habit_id={habit.id} week={item} />}
+                    keyExtractor={month => month.month}
+                    renderItem={({ item }) => (
+                        <View>
+                            <Text
+                                style={{
+                                    color: "#fff",
+                                    marginBottom: 3,
+                                    fontSize: 10,
+                                    opacity: 0.5,
+                                    fontWeight: "600",
+                                }}>
+                                {shortenMonth(item.month)}
+                            </Text>
+                            <View style={{ flexDirection: "row" }}>
+                                {item.weeks.map((week, index) => (
+                                    <WeekColumn key={index} habit_id={habit.id} week={week} />
+                                ))}
+                            </View>
+                        </View>
+                    )}
                 />
-            </Pressable>
+            </View>
+            <View style={styles.habit_footer}>
+                <Text style={styles.habit_title}>{habit.name}</Text>
+                <View style={{ flexDirection: "row", gap: 10, marginRight: 5 }}>
+                    <TouchableOpacity
+                        onPress={() => {
+                            setModalVisible(prev => !prev);
+                        }}
+                        style={styles.footer_button}>
+                        <Ionicons name="settings-outline" size={28} color="white" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => {
+                            if (habit.completedDates.has(today.toDateString())) {
+                                applyHabitAction({
+                                    type: "habit/dateRemoved",
+                                    habitId: habit.id,
+                                    date: new Date().toDateString(),
+                                });
+                            } else {
+                                trackToday();
+                            }
+                        }}
+                        style={{
+                            ...styles.footer_button,
+                            backgroundColor: habit.completedDates.has(today.toDateString())
+                                ? "#6fc302ff"
+                                : styles.container.backgroundColor,
+                        }}>
+                        <Ionicons name="checkmark-outline" size={28} color="white" />
+                    </TouchableOpacity>
+                </View>
+            </View>
         </View>
     );
 };

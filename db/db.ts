@@ -57,7 +57,7 @@ export async function nukeDB(): Promise<void> {
 
 export async function createHabit(name: string, startDate: string): Promise<number> {
     const res = await db.runAsync(
-        `INSERT INTO habits (name, start_date) VALUES (?, ?)`,
+        `INSERT INTO habits (name, start_date, archived) VALUES (?, ?, ?)`,
         name,
         startDate,
         false,
@@ -88,6 +88,19 @@ export async function UpdateHabit(
     );
 }
 
+// just so i dont have to pass everything everytime
+export async function renameHabit(id: number, name: string): Promise<void> {
+    await db.runAsync(
+        `
+        UPDATE habits
+        SET name = ?
+        WHERE id = ?
+        `,
+        name,
+        id,
+    );
+}
+
 export async function ArchiveHabit(id: number): Promise<void> {
     await db.runAsync(
         `UPDATE habits
@@ -103,7 +116,7 @@ export async function DeleteHabit(id: number): Promise<void> {
 }
 
 // ignore if unique combo (habit_id, completed_date) already exists
-export async function completeHabit(habitId: number, completedDate: string) {
+export async function trackHabitDate(habitId: number, completedDate: string) {
     await db.runAsync(
         `
         INSERT OR IGNORE INTO habit_dates
