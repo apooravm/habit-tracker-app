@@ -8,7 +8,8 @@ export type HabitAction =
     | { type: "habit/dateAdded"; habitId: number; date: string }
     | { type: "habit/dateRemoved"; habitId: number; date: string }
     | { type: "habit/renamed"; habitId: number; name: string }
-    | { type: "habit/deleted"; habitId: number };
+    | { type: "habit/archived"; habitId: number }
+    | { type: "habit/created"; name: string; date: string };
 
 export type ISODate = string;
 
@@ -36,4 +37,11 @@ export type HabitDate = {
     id: number;
     habit_id: number;
     complete_date: string;
+};
+
+export type HabitNote = {
+    id: number;
+    habit_id: number;
+    completion_date: string;
+    note: string;
 };

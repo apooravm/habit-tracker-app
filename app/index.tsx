@@ -1,12 +1,14 @@
-import CreateHabit from "@/components/CreateHabitModal";
+import CreateHabitModal from "@/components/CreateHabitModal";
 import HabitHeatmap from "@/components/HabitHeatmap";
 import { useModal } from "@/components/ModalContext";
 import {
     ArchiveHabit,
+    CreateHabit,
     getHabitDates,
     getHabits,
     renameHabit,
-    trackHabitDate
+    trackHabitDate,
+    untrackHabitDate,
 } from "@/db/db";
 import { HabitAction, HabitState } from "@/types/habits";
 import React, { useEffect, useState } from "react";
@@ -193,8 +195,12 @@ setHabits(prev => merge(prev, freshHabit));
                     habit.id === action.habitId ? { ...habit, name: action.name } : habit,
                 );
 
-            case "habit/deleted":
+            case "habit/archived":
                 return habits.filter(habit => habit.id !== action.habitId);
+
+            case "habit/created":
+                setRefetchHabitData(prev => !prev);
+                return habits;
         }
     };
 
@@ -205,15 +211,19 @@ setHabits(prev => merge(prev, freshHabit));
                 break;
 
             case "habit/dateRemoved":
-                await ArchiveHabit(action.habitId);
+                await untrackHabitDate(action.habitId, action.date);
                 break;
 
             case "habit/renamed":
                 await renameHabit(action.habitId, action.name);
                 break;
 
-            case "habit/deleted":
+            case "habit/archived":
                 await ArchiveHabit(action.habitId);
+                break;
+
+            case "habit/created":
+                await CreateHabit(action.name, action.date);
                 break;
 
             default:
@@ -237,10 +247,18 @@ setHabits(prev => merge(prev, freshHabit));
 
     return (
         <View style={styles.container}>
-            <CreateHabit
+            <CreateHabitModal
                 isVisible={modalVisible}
                 onClose={hideModal}
                 refetchHabitData={() => setRefetchHabitData(prev => !prev)}
+                CreateHabitAction={(name: string) => {
+                    const newHabitDate = new Date();
+                    applyHabitAction({
+                        type: "habit/created",
+                        name,
+                        date: newHabitDate.toDateString(),
+                    });
+                }}
             />
             <ScrollView style={styles.habitContainer}>
                 {habits.map(h => (

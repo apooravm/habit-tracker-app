@@ -1,4 +1,3 @@
-import { createHabit } from "@/db/db";
 import { MaterialIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useState } from "react";
@@ -8,6 +7,7 @@ type Props = {
     isVisible: boolean;
     onClose: () => void;
     refetchHabitData: () => void;
+    CreateHabitAction: (name: string) => void;
 };
 
 const BUTTON_W = 280;
@@ -96,7 +96,12 @@ const styles = StyleSheet.create({
     },
 });
 
-export default function CreateHabit({ isVisible, onClose, refetchHabitData }: Props) {
+export default function CreateHabitModal({
+    isVisible,
+    onClose,
+    refetchHabitData,
+    CreateHabitAction,
+}: Props) {
     const [habitName, setHabitName] = useState<string>("");
     return (
         <Modal transparent visible={isVisible} animationType="fade">
@@ -131,11 +136,10 @@ export default function CreateHabit({ isVisible, onClose, refetchHabitData }: Pr
                     <Pressable
                         style={styles.btnContainer}
                         onPress={() => {
-                            const today = new Date();
-                            createHabit(habitName, today.toDateString()).then(() => {
-                                onClose();
-                                refetchHabitData();
-                            });
+                            CreateHabitAction(habitName);
+                            setHabitName("");
+                            onClose();
+                            // refetchHabitData();
                         }}>
                         <View style={styles.shadow} />
                         <View style={styles.button}>
