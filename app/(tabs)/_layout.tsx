@@ -1,29 +1,56 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { StyleSheet } from "react-native";
+
+const colours = {
+    active: "#6fc302ff",
+    inactive: "#fff",
+    border: "#eee",
+    background: "#202020ff",
+};
 
 export default function tabLayout() {
     return (
-        <Tabs screenOptions={{ tabBarStyle: { display: "flex" }, tabBarActiveTintColor: "blue" }}>
+        <Tabs
+            screenOptions={{
+                tabBarShowLabel: true,
+                tabBarStyle: {
+                    display: "flex",
+                    backgroundColor: colours.background,
+                    borderColor: colours.border,
+                },
+                tabBarItemStyle: { borderRadius: 30 },
+                tabBarActiveTintColor: colours.active,
+                tabBarLabelStyle: { color: colours.inactive, fontWeight: "bold" },
+            }}>
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: "",
+                    title: "Home",
                     headerShown: false,
+                    // tabBarItemStyle: styles.tabIcon,
                     tabBarIcon: ({ color, focused }) => (
-                        <Ionicons name="home-outline" size={24} color={focused ? "blue" : color} />
+                        <Ionicons
+                            name={focused ? "home-sharp" : "home-outline"}
+                            size={24}
+                            color={focused ? colours.active : color}
+                            style={{
+                                borderColor: focused ? colours.active : "transparent",
+                            }}
+                        />
                     ),
                 }}
             />
             <Tabs.Screen
                 name="settings"
                 options={{
-                    title: "",
+                    title: "Settings",
                     headerShown: false,
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
-                            name="settings-outline"
+                            name={focused ? "settings-sharp" : "settings-outline"}
                             size={24}
-                            color={focused ? "blue" : color}
+                            color={focused ? colours.active : color}
                         />
                     ),
                 }}
@@ -31,3 +58,11 @@ export default function tabLayout() {
         </Tabs>
     );
 }
+
+const styles = StyleSheet.create({
+    tabIcon: {
+        borderWidth: 1,
+        borderColor: "#fff",
+        padding: 8,
+    },
+});

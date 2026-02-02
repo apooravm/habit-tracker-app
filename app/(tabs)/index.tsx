@@ -1,6 +1,6 @@
 import CreateHabitModal from "@/components/CreateHabitModal";
+import { useModal } from "@/components/CreateHabitModalContext";
 import HabitHeatmap from "@/components/HabitHeatmap";
-import { useModal } from "@/components/ModalContext";
 import {
     ArchiveHabit,
     CreateHabit,

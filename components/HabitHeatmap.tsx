@@ -122,6 +122,8 @@ const styles = StyleSheet.create({
         borderColor: "#303030ff",
         borderRadius: 5,
         padding: 8,
+        alignItems: "center",
+        justifyContent: "center",
     },
 });
 
