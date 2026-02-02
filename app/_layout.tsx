@@ -46,7 +46,7 @@ export default function RootLayout() {
             <Stack
                 screenOptions={{
                     headerStyle: {
-                        backgroundColor: "#25292e",
+                        backgroundColor: "#202020ff",
                     },
                     headerShadowVisible: false,
                     headerTintColor: "#fff",
@@ -56,8 +56,9 @@ export default function RootLayout() {
                     ),
 
                     headerRight: () => <HeaderButton />,
-                }}
-            />
+                }}>
+                <Stack.Screen name="(tabs)" options={{ headerShown: true }} />
+            </Stack>
         </ModalProvider>
     );
 }
