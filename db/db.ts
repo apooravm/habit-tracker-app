@@ -57,6 +57,13 @@ export async function initDB() {
             UNIQUE (habit_id, completion_date)
         );
 
+        CREATE TABLE IF NOT EXISTS habit_images (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            note_id INTEGER NOT NULL,
+            image_uri TEXT NOT NULL,
+            FOREIGN KEY (note_id) REFERENCES habit_notes(id) ON DELETE CASCADE
+        );
+
         CREATE INDEX IF NOT EXISTS idx_habit_dates_habit_id
             ON habit_dates(habit_id);
 
@@ -189,7 +196,7 @@ export async function addHabitNote(
 }
 
 export async function getHabitNotes(habitId: number, completionDate: string): Promise<HabitNote[]> {
-    return db.getAllAsync<HabitNote>(
+    const habitNotes = await db.getAllAsync<HabitNote>(
         `
         SELECT * FROM habit_notes
         WHERE habit_id = ? AND completion_date = ?
@@ -197,7 +204,32 @@ export async function getHabitNotes(habitId: number, completionDate: string): Pr
         habitId,
         completionDate,
     );
+
+    for (const note of habitNotes) {
+        note.images = await db.getAllAsync<string>(
+            `
+            SELECT image_uri
+            FROM habit_images
+            WHERE note_id = ?
+            `,
+            note.id,
+        );
+    }
+
+    return habitNotes;
 }
+
+export async function addHabitNoteImage(noteId: number, imageUri: string): Promise<void> {
+    await db.runAsync(
+        `
+        INSERT INTO habit_images (note_id, image_uri)
+        VALUES (?, ?)
+        `,
+        noteId,
+        imageUri,
+    );
+}
+
 export async function updateHabitNote(
     id: number,
     habitId: number,

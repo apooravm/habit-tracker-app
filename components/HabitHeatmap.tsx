@@ -1,8 +1,9 @@
 import { DayCount, DayDone, Habit, HabitAction, HabitState, ISODate } from "@/types/habits";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import HabitConfigModal from "./HabitConfigModal";
+import HabitNoteModal from "./HabitNoteModal";
 import WeekColumn from "./WeekColumn";
 
 type Month = {
@@ -140,7 +141,8 @@ const HabitHeatmap = ({ habit, applyHabitAction }: Props) => {
     };
     const today = new Date();
 
-    const [modalVisible, setModalVisible] = useState(false);
+    const [configModalVisible, setConfigModalVisible] = useState(false);
+    const [habitNoteModalVisible, setHabitNoteModalVisible] = useState(false);
 
     const trackToday = () => {
         applyHabitAction({
@@ -157,19 +159,50 @@ const HabitHeatmap = ({ habit, applyHabitAction }: Props) => {
             }}>
             <HabitConfigModal
                 habit={habitOnly}
-                isVisible={modalVisible}
-                onClose={() => setModalVisible(false)}
+                isVisible={configModalVisible}
+                onClose={() => setConfigModalVisible(false)}
                 applyHabitAction={applyHabitAction}
             />
-            <View>
+            <HabitNoteModal
+                isVisible={habitNoteModalVisible}
+                onClose={() => setHabitNoteModalVisible(false)}
+                applyHabitAction={applyHabitAction}
+                habit={habitOnly}
+            />
+            <View style={{ flex: 1, flexDirection: "row" }}>
+                <View
+                    style={{
+                        flexDirection: "column",
+                        alignItems: "center",
+                        paddingTop: 16,
+                        paddingRight: 5,
+                        borderWidth: 0,
+                        borderColor: "#303030ff",
+                        borderRadius: 5,
+                    }}>
+                    {["M", "T", "W", "T", "F", "S", "S"].map((day, idx) => (
+                        <Text
+                            key={idx}
+                            style={{
+                                color: "#fff",
+                                fontSize: 8,
+                                opacity: 0.5,
+                                paddingVertical: 2.8,
+                                fontWeight: "600",
+                            }}>
+                            {day}
+                        </Text>
+                    ))}
+                </View>
                 <FlatList
+                    style={{}}
                     data={months}
                     horizontal
                     inverted
                     showsHorizontalScrollIndicator={false}
                     keyExtractor={month => month.month}
                     renderItem={({ item }) => (
-                        <View>
+                        <View style={{}}>
                             <Text
                                 style={{
                                     color: "#fff",
@@ -194,7 +227,14 @@ const HabitHeatmap = ({ habit, applyHabitAction }: Props) => {
                 <View style={{ flexDirection: "row", gap: 10, marginRight: 5 }}>
                     <TouchableOpacity
                         onPress={() => {
-                            setModalVisible(prev => !prev);
+                            setHabitNoteModalVisible(prev => !prev);
+                        }}
+                        style={styles.footer_button}>
+                        <MaterialIcons name="edit-note" size={28} color="white" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => {
+                            setConfigModalVisible(prev => !prev);
                         }}
                         style={styles.footer_button}>
                         <Ionicons name="settings-outline" size={28} color="white" />
@@ -217,7 +257,7 @@ const HabitHeatmap = ({ habit, applyHabitAction }: Props) => {
                                 ? "#6fc302ff"
                                 : styles.container.backgroundColor,
                         }}>
-                        <Ionicons name="checkmark-outline" size={28} color="white" />
+                        <Ionicons name="checkmark-sharp" size={28} color="white" />
                     </TouchableOpacity>
                 </View>
             </View>

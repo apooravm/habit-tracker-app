@@ -9,7 +9,10 @@ export type HabitAction =
     | { type: "habit/dateRemoved"; habitId: number; date: string }
     | { type: "habit/renamed"; habitId: number; name: string }
     | { type: "habit/archived"; habitId: number }
-    | { type: "habit/created"; name: string; date: string };
+    | { type: "habit/created"; name: string; date: string }
+    | { type: "habit/noteAdded"; habitId: number; note: string }
+    | { type: "habit/noteRemoved"; habitId: number; noteId: number }
+    | { type: "habit/noteUpdated"; habitId: number; noteId: number; note: string };
 
 export type ISODate = string;
 
@@ -44,4 +47,5 @@ export type HabitNote = {
     habit_id: number;
     completion_date: string;
     note: string;
+    images: string[];
 };
