@@ -3,17 +3,20 @@ import { BlurView } from "expo-blur";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 type Props = {
-    configModalOnClose: () => void;
     onClose: () => void;
     isVisible: boolean;
-    ArchiveHabitAction: () => void;
+    title: string;
+    description: string;
+    onPressConfirm: () => void;
 };
 
-export default function ArchiveHabitConfirmModal({
+// Do you really want to archive this habit?
+export default function ConfirmDeleteModal({
     onClose,
     isVisible,
-    configModalOnClose,
-    ArchiveHabitAction,
+    title,
+    description,
+    onPressConfirm,
 }: Props) {
     return (
         <Modal transparent visible={isVisible} animationType="fade">
@@ -38,14 +41,12 @@ export default function ArchiveHabitConfirmModal({
                             <Pressable style={{ marginTop: 4 }} onPress={onClose}>
                                 <MaterialIcons name="close" size={22} color="#000" />
                             </Pressable>
-                            <Text style={styles.title}>Archive</Text>
+                            <Text style={styles.title}>{title}</Text>
                         </View>
                     </View>
                     <View>
                         <View style={styles.inputContainer}>
-                            <Text style={styles.inputText}>
-                                Do you really want to archive this habit?
-                            </Text>
+                            <Text style={styles.inputText}>{description}</Text>
                         </View>
                     </View>
                     <View
@@ -74,11 +75,7 @@ export default function ArchiveHabitConfirmModal({
                                 backgroundColor: "#b60000ff",
                                 borderColor: "transparent",
                             }}
-                            onPress={() => {
-                                ArchiveHabitAction();
-                                onClose();
-                                configModalOnClose();
-                            }}>
+                            onPress={onPressConfirm}>
                             <Text
                                 style={{
                                     fontSize: 12,

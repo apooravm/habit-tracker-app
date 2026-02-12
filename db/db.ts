@@ -11,7 +11,7 @@ completed_date  TEXT     (YYYY-MM-DD)
 
  */
 
-import { Habit, HabitNote } from "@/types/habits";
+import { Habit, HabitImage, HabitNote } from "@/types/habits";
 import * as SQLite from "expo-sqlite";
 
 export const db = SQLite.openDatabaseSync("habits.db");
@@ -59,9 +59,10 @@ export async function initDB() {
 
         CREATE TABLE IF NOT EXISTS habit_images (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            note_id INTEGER NOT NULL,
+            habit_id INTEGER NOT NULL,
+            completion_date TEXT NOT NULL,
             image_uri TEXT NOT NULL,
-            FOREIGN KEY (note_id) REFERENCES habit_notes(id) ON DELETE CASCADE
+            FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
         );
 
         CREATE INDEX IF NOT EXISTS idx_habit_dates_habit_id
@@ -195,37 +196,80 @@ export async function addHabitNote(
     );
 }
 
-export async function getHabitNotes(habitId: number, completionDate: string): Promise<HabitNote[]> {
-    const habitNotes = await db.getAllAsync<HabitNote>(
+// since every completion date can have only 1 note...
+export async function getHabitNote(
+    habitId: number,
+    completionDate: string,
+): Promise<{ note: HabitNote; images: HabitImage[] }> {
+    const habitNotes = await db.getAllAsync<{ id: number; note: string }>(
         `
-        SELECT * FROM habit_notes
+        SELECT id, note FROM habit_notes
         WHERE habit_id = ? AND completion_date = ?
         `,
         habitId,
         completionDate,
     );
 
-    for (const note of habitNotes) {
-        note.images = await db.getAllAsync<string>(
-            `
-            SELECT image_uri
+    const raw_images = await db.getAllAsync<{ id: number; image_uri: string }>(
+        `
+            SELECT id, image_uri
             FROM habit_images
-            WHERE note_id = ?
+            WHERE habit_id = ? AND completion_date = ?
             `,
-            note.id,
-        );
+        habitId,
+        completionDate,
+    );
+
+    const habit_note: HabitNote = {
+        id: 0,
+        note: "",
+        completion_date: completionDate,
+        habit_id: habitId,
+    };
+
+    if (habitNotes.length > 0) {
+        habit_note.id = habitNotes[0].id;
+        habit_note.note = habitNotes[0].note;
     }
 
-    return habitNotes;
+    const habit_images: HabitImage[] = raw_images.map(img => {
+        return {
+            id: img.id,
+            image_uri: img.image_uri,
+            completion_date: completionDate,
+            habit_id: habitId,
+        };
+    });
+
+    return {
+        note: habit_note,
+        images: habit_images,
+    };
 }
 
-export async function addHabitNoteImage(noteId: number, imageUri: string): Promise<void> {
+export async function addHabitNoteImage(
+    habitId: number,
+    imageUri: string,
+    completionDate: string,
+): Promise<void> {
     await db.runAsync(
         `
-        INSERT INTO habit_images (note_id, image_uri)
-        VALUES (?, ?)
+        INSERT INTO habit_images (habit_id, image_uri, completion_date)
+        VALUES (?, ?, ?)
         `,
-        noteId,
+        habitId,
+        imageUri,
+        completionDate,
+    );
+}
+
+export async function removeHabitNoteImage(habitId: number, imageUri: string): Promise<void> {
+    await db.runAsync(
+        `
+        DELETE FROM habit_images
+        WHERE habit_id = ? AND image_uri = ?
+        `,
+        habitId,
         imageUri,
     );
 }

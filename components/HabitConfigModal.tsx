@@ -4,7 +4,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import ArchiveHabitConfirmModal from "./ArchiveHabitConfirmModal";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 type Props = {
     onClose: () => void;
@@ -19,16 +19,19 @@ export default function HabitConfigModal({ onClose, isVisible, habit, applyHabit
 
     return (
         <Modal transparent visible={isVisible} animationType="fade">
-            <ArchiveHabitConfirmModal
+            <ConfirmDeleteModal
                 onClose={() => setModalVisible(false)}
-                configModalOnClose={onClose}
                 isVisible={modalVisible}
-                ArchiveHabitAction={() =>
+                title="Archive habit"
+                description="Are you sure you want to archive this habit?"
+                onPressConfirm={() => {
                     applyHabitAction({
                         type: "habit/archived",
                         habitId: habitData.id,
-                    })
-                }
+                    });
+                    setModalVisible(false);
+                    onClose();
+                }}
             />
             <View style={styles.container}>
                 <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>

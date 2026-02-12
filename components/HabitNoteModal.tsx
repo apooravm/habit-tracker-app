@@ -1,10 +1,12 @@
-import { Habit, HabitAction } from "@/types/habits";
+import { addHabitNote, addHabitNoteImage, getHabitNote } from "@/db/db";
+import { Habit, HabitAction, HabitImage, HabitNote } from "@/types/habits";
 import { MaterialIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 type Props = {
     onClose: () => void;
@@ -14,7 +16,22 @@ type Props = {
 };
 
 export default function HabitNoteModal({ onClose, isVisible, habit, applyHabitAction }: Props) {
-    const [imageURIs, setImageURIs] = useState<string[]>([]);
+    const [images, setImages] = useState<HabitImage[]>([]);
+    const [noteText, setNoteText] = useState<HabitNote>({
+        completion_date: new Date().toDateString(),
+        habit_id: habit.id,
+        note: "",
+        id: -1,
+    });
+    const [deleteImageModalVisible, setDeleteImageModalVisible] = useState(false);
+
+    useEffect(() => {
+        const today = new Date().toDateString();
+        getHabitNote(habit.id, today).then(data => {
+            setNoteText(data.note);
+            setImages(data.images);
+        });
+    }, []);
 
     const pickImageAsync = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -24,7 +41,14 @@ export default function HabitNoteModal({ onClose, isVisible, habit, applyHabitAc
         });
 
         if (!result.canceled) {
-            setImageURIs([...imageURIs, ...result.assets.map(asset => asset.uri)]);
+            const newimage: HabitImage = {
+                id: -1,
+                image_uri: result.assets[0].uri,
+                completion_date: new Date().toDateString(),
+                habit_id: habit.id,
+            };
+            setImages([...images, newimage]);
+            // addHabitNoteImage(habit.id, result.assets[0].uri, new Date().toDateString());
         } else {
             alert("You did not select any image.");
         }
@@ -32,6 +56,15 @@ export default function HabitNoteModal({ onClose, isVisible, habit, applyHabitAc
 
     return (
         <Modal transparent visible={isVisible} animationType="fade">
+            <ConfirmDeleteModal
+                onClose={() => setDeleteImageModalVisible(false)}
+                isVisible={deleteImageModalVisible}
+                title="Delete image"
+                description="Are you sure you want to delete this image?"
+                onPressConfirm={() => {
+                    setDeleteImageModalVisible(false);
+                }}
+            />
             <View style={styles.container}>
                 <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
                     <BlurView
@@ -49,7 +82,7 @@ export default function HabitNoteModal({ onClose, isVisible, habit, applyHabitAc
                                 flexDirection: "row",
                                 justifyContent: "flex-start",
                                 alignContent: "center",
-                                gap: 6,
+                                gap: 10,
                             }}>
                             <Pressable style={{ marginTop: 4 }} onPress={onClose}>
                                 <MaterialIcons name="close" size={22} color="#000" />
@@ -57,60 +90,126 @@ export default function HabitNoteModal({ onClose, isVisible, habit, applyHabitAc
                             <Text style={styles.title}>Note</Text>
                         </View>
                     </View>
-                    <View>
+                    <ScrollView
+                        style={{
+                            minHeight: 100,
+                            maxHeight: 450,
+                            borderWidth: 0,
+                            borderColor: "#ccc",
+                            borderRadius: 5,
+                            padding: 4,
+                            gap: 10,
+                        }}>
                         <TextInput
                             multiline
                             autoFocus
                             autoCorrect
                             scrollEnabled
+                            value={noteText?.note}
+                            onChangeText={text => {
+                                const temp: HabitNote = {
+                                    completion_date: new Date().toDateString(),
+                                    habit_id: habit.id,
+                                    note: text,
+                                    id: noteText ? noteText.id : -1,
+                                };
+                                setNoteText(temp);
+                            }}
                             style={styles.inputBox}
                             placeholder={`How was ${habit.name.toLocaleLowerCase()} today?`}
                         />
-                    </View>
-                    <View>
-                        {imageURIs.map((uri, index) => (
-                            <View
-                                key={index}
-                                style={{
-                                    width: "100%", // fill the modal's content width
-                                    height: "auto", // fixed height for the image container
-                                    overflow: "hidden",
-                                    marginBottom: 8,
-                                    borderWidth: 1,
-                                    borderColor: "#ccc",
-                                }}>
-                                <Image
-                                    source={{ uri }}
-                                    // let the image fill the container width and keep its aspect ratio
-                                    style={{ width: "100%", aspectRatio: 1 }}
-                                    contentFit="contain"
-                                />
-                            </View>
-                        ))}
-                    </View>
-                    <Pressable
-                        onPress={() => {
-                            pickImageAsync();
-                        }}
-                        style={{
-                            alignItems: "center",
-                            gap: 8,
-                            marginTop: 15,
-                            borderWidth: 2,
-                            borderColor: "#ccc",
-                            borderRadius: 5,
-                            padding: 10,
-                            borderStyle: "dashed",
-                        }}>
-                        <View style={{ flexDirection: "column", alignItems: "center", gap: 8 }}>
-                            <MaterialIcons name="add-a-photo" size={22} color="#000" />
-                            <Text>Add Photos</Text>
-                        </View>
-                    </Pressable>
+                        <ScrollView
+                            horizontal
+                            nestedScrollEnabled={true}
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={[
+                                {
+                                    paddingVertical: 8,
+                                    paddingRight: 0,
+                                    alignItems: "center",
+                                    flexDirection: "row",
+                                    gap: 4,
+
+                                    borderWidth: 0,
+                                    borderColor: "red",
+                                },
+                                images.length === 0
+                                    ? { width: "100%", minWidth: 0 } // full width when no images
+                                    : {},
+                            ]}
+                            style={{
+                                flex: 1,
+                                maxHeight: 180, // give the horizontal scroller a bounded height
+                            }}>
+                            {images.map((image, index) => (
+                                <View
+                                    key={index}
+                                    style={{
+                                        width: 140,
+                                        height: 140,
+                                        overflow: "hidden",
+                                        borderWidth: 1,
+                                        borderColor: "#ccc",
+                                        borderRadius: 6,
+                                        borderBottomRightRadius: 0,
+                                    }}>
+                                    <MaterialIcons
+                                        style={styles.deletePhotoIcon}
+                                        name="delete-outline"
+                                        size={26}
+                                        color="#ffffff"
+                                    />
+                                    <Image
+                                        source={{ uri: image.image_uri }}
+                                        style={{ width: "100%", height: "100%" }}
+                                        contentFit="cover"
+                                    />
+                                </View>
+                            ))}
+                            <Pressable
+                                onPress={() => {
+                                    pickImageAsync();
+                                }}
+                                style={[
+                                    {
+                                        height: 140,
+                                        flexGrow: 1,
+                                        minWidth: 140,
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        borderWidth: 2,
+                                        borderColor: "#ccc",
+                                        borderRadius: 6,
+                                        padding: 10,
+                                        borderStyle: "dashed",
+                                    },
+                                    images.length === 0
+                                        ? { width: "100%", minWidth: 0 } // full width when no images
+                                        : { width: 140 }, // keep compact when images present
+                                ]}>
+                                <View
+                                    style={{
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                    }}>
+                                    <MaterialIcons name="add-a-photo" size={22} color="#000" />
+                                    <Text>Add Photos</Text>
+                                </View>
+                            </Pressable>
+                        </ScrollView>
+                    </ScrollView>
                     <Pressable
                         style={styles.btnContainer}
                         onPress={() => {
-                            pickImageAsync();
+                            const today = new Date().toDateString();
+                            // Keeping notes and images separate
+                            if (noteText.note.length !== 0) {
+                                addHabitNote(habit.id, noteText.note, today);
+                            }
+                            images.forEach(img => {
+                                addHabitNoteImage(habit.id, img.image_uri, today);
+                            });
+                            onClose();
                         }}>
                         <View style={styles.shadow} />
                         <View style={styles.button}>
@@ -128,7 +227,7 @@ export default function HabitNoteModal({ onClose, isVisible, habit, applyHabitAc
     );
 }
 
-const BUTTON_W = 280;
+const BUTTON_W = 320;
 const BUTTON_H = 50;
 
 const styles = StyleSheet.create({
@@ -139,10 +238,10 @@ const styles = StyleSheet.create({
     },
 
     popup: {
-        width: "80%",
+        width: "90%",
         backgroundColor: "rgba(255,255,255,0.9)",
         borderRadius: 10,
-        padding: 24,
+        padding: 18,
         // paddingVertical: 32,
         paddingBottom: 50,
 
@@ -161,6 +260,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignContent: "center",
         paddingBottom: 5,
+        paddingLeft: 4,
     },
 
     title: {
@@ -188,6 +288,16 @@ const styles = StyleSheet.create({
         minHeight: 100,
         maxHeight: 300,
         textAlignVertical: "top",
+    },
+
+    deletePhotoIcon: {
+        position: "absolute",
+        // width: 10,
+        // height: 10,
+        backgroundColor: "#dc0000ff",
+        borderBottomRightRadius: 0,
+        transform: [{ translateY: 112 }, { translateX: 112 }],
+        zIndex: 1,
     },
 
     shadow: {
