@@ -78,6 +78,8 @@ export async function nukeDB(): Promise<void> {
     await db.execAsync(`
         DROP TABLE IF EXISTS habit_dates;
         DROP TABLE IF EXISTS habits;
+        DROP TABLE IF EXISTS habit_notes;
+        DROP TABLE IF EXISTS habit_images;
     `);
 
     await initDB();
@@ -177,7 +179,11 @@ export async function getHabitDates(habitId: number): Promise<string[]> {
         habitId,
     );
 
-    return (await rows).map(r => r.completed_date);
+    // convert from ISO to date string
+    return (await rows).map(r => {
+        const date = new Date(r.completed_date);
+        return date.toDateString();
+    });
 }
 
 export async function addHabitNote(
@@ -221,7 +227,7 @@ export async function getHabitNote(
     );
 
     const habit_note: HabitNote = {
-        id: 0,
+        id: -1,
         note: "",
         completion_date: completionDate,
         habit_id: habitId,
@@ -247,12 +253,13 @@ export async function getHabitNote(
     };
 }
 
+// returns image id
 export async function addHabitNoteImage(
     habitId: number,
     imageUri: string,
     completionDate: string,
-): Promise<void> {
-    await db.runAsync(
+): Promise<number> {
+    const img = await db.runAsync(
         `
         INSERT INTO habit_images (habit_id, image_uri, completion_date)
         VALUES (?, ?, ?)
@@ -261,16 +268,17 @@ export async function addHabitNoteImage(
         imageUri,
         completionDate,
     );
+
+    return img.lastInsertRowId;
 }
 
-export async function removeHabitNoteImage(habitId: number, imageUri: string): Promise<void> {
+export async function removeHabitNoteImage(image_id: number): Promise<void> {
     await db.runAsync(
         `
         DELETE FROM habit_images
-        WHERE habit_id = ? AND image_uri = ?
+        WHERE id = ?
         `,
-        habitId,
-        imageUri,
+        image_id,
     );
 }
 

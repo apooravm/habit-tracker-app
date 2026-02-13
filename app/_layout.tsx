@@ -50,6 +50,7 @@ export default function RootLayout() {
         const date = new Date();
         // date string without the year
         return date.toDateString().split(" ").slice(0, 3).join(" ");
+        // return getDateStr();
     };
 
     return (

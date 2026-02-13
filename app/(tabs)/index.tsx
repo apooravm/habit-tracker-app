@@ -86,55 +86,11 @@ const fetched_dates_raw = [
 // Also would be more complicated to convert back to []string when saving to db
 // ALWAYS - render what you store NOT store what you render
 export default function Index() {
-    const [fetchedDates, setFetchedDates] = useState<Set<string>>(new Set());
     const [habits, setHabits] = useState<HabitState[]>([]);
     const [refetchHabitData, setRefetchHabitData] = useState(false);
 
     const { modalVisible, hideModal } = useModal();
 
-    /*
-    Updating with new data (name, completed date, etc.)
-
-Instead of passing just id, pass what changed.
-
-const updateHabit = (id: number, changes: Partial<HabitState>) => {
-  setHabits(prev =>
-    prev.map(h =>
-      h.id === id ? { ...h, ...changes } : h
-    )
-  );
-};
-
-
-Usage:
-
-updateHabit(habit.id, { name: "Drink Water" });
-
-
-For Set:
-
-updateHabit(habit.id, {
-  completedDates: new Set([...habit.completedDates, today]),
-});
-
-// 1. optimistic UI
-setHabits(prev => updateLocally(prev, id));
-
-// 2. save to DB
-await updateHabitInDb(id);
-
-// 3. optional: revalidate
-const freshHabit = await fetchHabit(id);
-setHabits(prev => merge(prev, freshHabit));
-
-    // setHabits(prev =>
-    //     prev.map(habit =>
-    //         habit.id === updatedHabit.id
-    //         ? { ...habit, name: "New name" }
-    //         : habit
-    //     )
-    // );
-*/
     useEffect(() => {
         // load from db here...
         // setFetchedDates(new Set(fetched_dates_raw));
@@ -169,6 +125,7 @@ setHabits(prev => merge(prev, freshHabit));
         });
     };
 
+    // Assume the date coming in is ISO String
     const reduceHabits = (habits: HabitState[], action: HabitAction): HabitState[] => {
         switch (action.type) {
             case "habit/dateAdded":
@@ -176,14 +133,17 @@ setHabits(prev => merge(prev, freshHabit));
                     habit.id === action.habitId
                         ? {
                               ...habit,
-                              completedDates: new Set([...habit.completedDates, action.date]),
+                              completedDates: new Set([
+                                  ...habit.completedDates,
+                                  new Date(action.date).toDateString(),
+                              ]),
                           }
                         : habit,
                 );
 
             case "habit/dateRemoved":
                 const newDates = habits.find(h => h.id === action.habitId)!.completedDates;
-                newDates.delete(action.date);
+                newDates.delete(new Date(action.date).toDateString());
                 return habits.map(habit =>
                     habit.id === action.habitId
                         ? { ...habit, completedDates: new Set(newDates) }
@@ -204,6 +164,7 @@ setHabits(prev => merge(prev, freshHabit));
         }
     };
 
+    // Assume the dates coming in are ISO
     const syncHabitWithDb = async (action: HabitAction) => {
         switch (action.type) {
             case "habit/dateAdded":
@@ -235,28 +196,16 @@ setHabits(prev => merge(prev, freshHabit));
         // setHabits(prev => merge(prev, freshHabit));
     };
 
-    // DEPRECATED
-    const updateHabit = (id: number, changes: Partial<HabitState>) => {
-        setHabits(prev => prev.map(h => (h.id === id ? { ...h, ...changes } : h)));
-    };
-
-    useEffect(() => {
-        // save to db here...
-        // saveCompleteDates([...fetchedDates])
-    }, [fetchedDates]);
-
     return (
         <View style={styles.container}>
             <CreateHabitModal
                 isVisible={modalVisible}
                 onClose={hideModal}
-                refetchHabitData={() => setRefetchHabitData(prev => !prev)}
                 CreateHabitAction={(name: string) => {
-                    const newHabitDate = new Date();
                     applyHabitAction({
                         type: "habit/created",
                         name,
-                        date: newHabitDate.toDateString(),
+                        date: new Date().toDateString(),
                     });
                 }}
             />

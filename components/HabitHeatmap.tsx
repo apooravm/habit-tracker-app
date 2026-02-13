@@ -166,7 +166,6 @@ const HabitHeatmap = ({ habit, applyHabitAction }: Props) => {
             <HabitNoteModal
                 isVisible={habitNoteModalVisible}
                 onClose={() => setHabitNoteModalVisible(false)}
-                applyHabitAction={applyHabitAction}
                 habit={habitOnly}
             />
             <View style={{ flex: 1, flexDirection: "row" }}>

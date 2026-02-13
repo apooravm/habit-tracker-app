@@ -6,7 +6,6 @@ import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-nativ
 type Props = {
     isVisible: boolean;
     onClose: () => void;
-    refetchHabitData: () => void;
     CreateHabitAction: (name: string) => void;
 };
 
@@ -96,12 +95,7 @@ const styles = StyleSheet.create({
     },
 });
 
-export default function CreateHabitModal({
-    isVisible,
-    onClose,
-    refetchHabitData,
-    CreateHabitAction,
-}: Props) {
+export default function CreateHabitModal({ isVisible, onClose, CreateHabitAction }: Props) {
     const [habitName, setHabitName] = useState<string>("");
     return (
         <Modal transparent visible={isVisible} animationType="fade">
@@ -136,7 +130,7 @@ export default function CreateHabitModal({
                     <Pressable
                         style={styles.btnContainer}
                         onPress={() => {
-                            CreateHabitAction(habitName);
+                            CreateHabitAction(habitName.trim());
                             setHabitName("");
                             onClose();
                             // refetchHabitData();
